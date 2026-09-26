@@ -1,0 +1,86 @@
+{
+  "test_size": 6000,
+  "portfolio_default_rate": 0.16366666666666665,
+  "technical": {
+    "Logistic regression (deployed)": {
+      "AUC": 0.846446884900712,
+      "KS": 0.548474372097516,
+      "Brier": 0.09908975787201009
+    },
+    "Gradient boosting (benchmark)": {
+      "AUC": 0.8450176107357708,
+      "KS": 0.5294507999308395,
+      "Brier": 0.10095746260984374
+    },
+    "Logistic without captured expert features": {
+      "AUC": 0.8440096305033042,
+      "KS": 0.5429163768072414,
+      "Brier": 0.09998137270649957
+    }
+  },
+  "business": {
+    "A. Checklist (status quo)": {
+      "approval_rate": 0.5566666666666666,
+      "loans_approved": 3340,
+      "default_rate_of_approved": 0.08023952095808383,
+      "credit_losses_$": 38693700.0,
+      "interest_income_$": 98006040.0,
+      "net_profit_$": 59312340.0
+    },
+    "B. Model only": {
+      "approval_rate": 0.5825,
+      "loans_approved": 3495,
+      "default_rate_of_approved": 0.04206008583690987,
+      "credit_losses_$": 22538100.0,
+      "interest_income_$": 119407050.0,
+      "net_profit_$": 96868950.0
+    },
+    "C. UnderwriteIQ hybrid": {
+      "approval_rate": 0.5698333333333333,
+      "loans_approved": 3419,
+      "default_rate_of_approved": 0.050599590523544895,
+      "credit_losses_$": 26223600.0,
+      "interest_income_$": 115900200.0,
+      "net_profit_$": 89676600.0
+    }
+  },
+  "fairness": {
+    "A. Checklist (status quo)": {
+      "approval_rate_minority_owned": 0.5319634703196348,
+      "approval_rate_other": 0.5668549905838042,
+      "adverse_impact_ratio": 0.9384471851818141
+    },
+    "B. Model only": {
+      "approval_rate_minority_owned": 0.5148401826484018,
+      "approval_rate_other": 0.6104048964218456,
+      "adverse_impact_ratio": 0.8434404534864678
+    },
+    "C. UnderwriteIQ hybrid": {
+      "approval_rate_minority_owned": 0.5405251141552512,
+      "approval_rate_other": 0.5819209039548022,
+      "adverse_impact_ratio": 0.9288635456842667
+    }
+  },
+  "apex_case": {
+    "uninsured_cat_exposed_loans_in_test": 211,
+    "their_default_rate": 0.3459715639810427,
+    "approved_by_checklist": 112,
+    "approved_by_model_only": 45,
+    "approved_by_model_without_expert_features": 98,
+    "booked_by_hybrid_without_insurance": 0
+  },
+  "hybrid_decision_mix": {
+    "APPROVE": 0.3632,
+    "DECLINE": 0.2738,
+    "APPROVE WITH CONDITIONS": 0.1167,
+    "REFER-DECLINED": 0.0907,
+    "REFER": 0.09,
+    "HOLD": 0.0657
+  },
+  "assumptions": {
+    "net_spread": 0.03,
+    "avg_life_years": 3.0,
+    "base_lgd": 0.6,
+    "committee_approves_up_to_grade": 6
+  }
+}

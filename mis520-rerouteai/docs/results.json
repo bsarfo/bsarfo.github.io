@@ -1,0 +1,301 @@
+{
+  "model": {
+    "source": "synthetic BTS-format data (stand-in)",
+    "train_rows": 187259,
+    "test_rows": 62741,
+    "late_rate_test": 0.23737269090387467,
+    "pr_auc": {
+      "gradient boosting": 0.32594580743071966,
+      "hour-of-day lookup": 0.31413032245581723,
+      "no skill": 0.23737269090387467
+    },
+    "brier": {
+      "gradient boosting": 0.17569591614470073,
+      "hour-of-day lookup": 0.1766137472115468
+    },
+    "log_loss_buckets": {
+      "gradient boosting": 1.4316546294355794,
+      "climatology": 1.4418654309721
+    },
+    "calibration": [
+      {
+        "predicted": 0.146,
+        "actual": 0.134
+      },
+      {
+        "predicted": 0.172,
+        "actual": 0.16
+      },
+      {
+        "predicted": 0.194,
+        "actual": 0.177
+      },
+      {
+        "predicted": 0.211,
+        "actual": 0.197
+      },
+      {
+        "predicted": 0.227,
+        "actual": 0.218
+      },
+      {
+        "predicted": 0.246,
+        "actual": 0.244
+      },
+      {
+        "predicted": 0.27,
+        "actual": 0.253
+      },
+      {
+        "predicted": 0.298,
+        "actual": 0.287
+      },
+      {
+        "predicted": 0.333,
+        "actual": 0.31
+      },
+      {
+        "predicted": 0.404,
+        "actual": 0.393
+      }
+    ]
+  },
+  "decisions": {
+    "airline cases, model is right": [
+      {
+        "strategy": "Earliest arrival",
+        "cost": 578.576,
+        "delay_h": 3.936,
+        "within_3h": 0.525,
+        "failed": 0.022,
+        "cost_vs_ReRouteAI_$": 6.102
+      },
+      {
+        "strategy": "Lowest fare",
+        "cost": 915.066,
+        "delay_h": 5.733,
+        "within_3h": 0.0,
+        "failed": 0.091,
+        "cost_vs_ReRouteAI_$": 342.592
+      },
+      {
+        "strategy": "Next direct, same carrier",
+        "cost": 981.071,
+        "delay_h": 6.304,
+        "within_3h": 0.0,
+        "failed": 0.027,
+        "cost_vs_ReRouteAI_$": 408.597
+      },
+      {
+        "strategy": "ReRouteAI",
+        "cost": 572.474,
+        "delay_h": 5.438,
+        "within_3h": 0.549,
+        "failed": 0.025,
+        "cost_vs_ReRouteAI_$": 0.0
+      }
+    ],
+    "traveller cases, model is right": [
+      {
+        "strategy": "Earliest arrival",
+        "cost": 805.76,
+        "delay_h": 4.094,
+        "within_3h": 0.511,
+        "failed": 0.02,
+        "cost_vs_ReRouteAI_$": 76.802
+      },
+      {
+        "strategy": "Lowest fare",
+        "cost": 866.082,
+        "delay_h": 5.589,
+        "within_3h": 0.0,
+        "failed": 0.12,
+        "cost_vs_ReRouteAI_$": 137.125
+      },
+      {
+        "strategy": "Next direct, same carrier",
+        "cost": 961.585,
+        "delay_h": 6.299,
+        "within_3h": 0.0,
+        "failed": 0.024,
+        "cost_vs_ReRouteAI_$": 232.628
+      },
+      {
+        "strategy": "ReRouteAI",
+        "cost": 728.958,
+        "delay_h": 4.785,
+        "within_3h": 0.244,
+        "failed": 0.07,
+        "cost_vs_ReRouteAI_$": 0.0
+      }
+    ],
+    "airline cases, delays 50% worse than model": [
+      {
+        "strategy": "Earliest arrival",
+        "cost": 668.352,
+        "delay_h": 4.531,
+        "within_3h": 0.388,
+        "failed": 0.042,
+        "cost_vs_ReRouteAI_$": -9.808
+      },
+      {
+        "strategy": "Lowest fare",
+        "cost": 938.991,
+        "delay_h": 6.077,
+        "within_3h": 0.0,
+        "failed": 0.154,
+        "cost_vs_ReRouteAI_$": 260.831
+      },
+      {
+        "strategy": "Next direct, same carrier",
+        "cost": 985.233,
+        "delay_h": 6.512,
+        "within_3h": 0.0,
+        "failed": 0.036,
+        "cost_vs_ReRouteAI_$": 307.073
+      },
+      {
+        "strategy": "ReRouteAI",
+        "cost": 678.16,
+        "delay_h": 6.616,
+        "within_3h": 0.382,
+        "failed": 0.044,
+        "cost_vs_ReRouteAI_$": 0.0
+      }
+    ],
+    "traveller cases, delays 50% worse than model": [
+      {
+        "strategy": "Earliest arrival",
+        "cost": 856.1,
+        "delay_h": 4.273,
+        "within_3h": 0.419,
+        "failed": 0.039,
+        "cost_vs_ReRouteAI_$": 94.943
+      },
+      {
+        "strategy": "Lowest fare",
+        "cost": 886.955,
+        "delay_h": 5.919,
+        "within_3h": 0.0,
+        "failed": 0.177,
+        "cost_vs_ReRouteAI_$": 125.797
+      },
+      {
+        "strategy": "Next direct, same carrier",
+        "cost": 952.277,
+        "delay_h": 6.499,
+        "within_3h": 0.0,
+        "failed": 0.037,
+        "cost_vs_ReRouteAI_$": 191.119
+      },
+      {
+        "strategy": "ReRouteAI",
+        "cost": 761.157,
+        "delay_h": 5.148,
+        "within_3h": 0.186,
+        "failed": 0.131,
+        "cost_vs_ReRouteAI_$": 0.0
+      }
+    ]
+  },
+  "sensitivity": [
+    {
+      "value_of_time_$per_h": 0,
+      "recommended": "ZRH \u2192 WAW",
+      "flights": "LX1348",
+      "p_works": 0.96,
+      "traveller_pays_$": 0
+    },
+    {
+      "value_of_time_$per_h": 10,
+      "recommended": "ZRH \u2192 WAW",
+      "flights": "LX1348",
+      "p_works": 0.96,
+      "traveller_pays_$": 0
+    },
+    {
+      "value_of_time_$per_h": 25,
+      "recommended": "ZRH \u2192 VIE \u2192 WAW",
+      "flights": "OS566 + OS627",
+      "p_works": 0.65,
+      "traveller_pays_$": 0
+    },
+    {
+      "value_of_time_$per_h": 50,
+      "recommended": "ZRH \u2192 VIE \u2192 WAW",
+      "flights": "OS566 + OS627",
+      "p_works": 0.65,
+      "traveller_pays_$": 0
+    },
+    {
+      "value_of_time_$per_h": 75,
+      "recommended": "ZRH \u2192 VIE \u2192 WAW",
+      "flights": "OS566 + OS627",
+      "p_works": 0.65,
+      "traveller_pays_$": 0
+    },
+    {
+      "value_of_time_$per_h": 100,
+      "recommended": "ZRH \u2192 VIE \u2192 WAW",
+      "flights": "OS566 + OS627",
+      "p_works": 0.65,
+      "traveller_pays_$": 0
+    },
+    {
+      "value_of_time_$per_h": 150,
+      "recommended": "ZRH \u2192 WAW",
+      "flights": "AJ811",
+      "p_works": 0.97,
+      "traveller_pays_$": 260
+    },
+    {
+      "value_of_time_$per_h": 200,
+      "recommended": "ZRH \u2192 WAW",
+      "flights": "AJ811",
+      "p_works": 0.97,
+      "traveller_pays_$": 260
+    },
+    {
+      "value_of_time_$per_h": 300,
+      "recommended": "ZRH \u2192 WAW",
+      "flights": "AJ811",
+      "p_works": 0.97,
+      "traveller_pays_$": 260
+    },
+    {
+      "value_of_time_$per_h": 400,
+      "recommended": "ZRH \u2192 WAW",
+      "flights": "AJ811",
+      "p_works": 0.97,
+      "traveller_pays_$": 260
+    },
+    {
+      "value_of_time_$per_h": "airline view, EU261 applies",
+      "recommended": "ZRH \u2192 WAW",
+      "flights": "AJ811",
+      "p_works": 0.97,
+      "traveller_pays_$": 260
+    },
+    {
+      "value_of_time_$per_h": "airline view, EU261 exempt (weather)",
+      "recommended": "ZRH \u2192 WAW",
+      "flights": "LX1350",
+      "p_works": 0.93,
+      "traveller_pays_$": 0
+    }
+  ],
+  "retrieval": {
+    "questions": 12,
+    "hit@1": 0.8333333333333334,
+    "hit@3": 1.0,
+    "misses": []
+  },
+  "roi": {
+    "expected_saving_per_pax_vs_default_$": 408.6,
+    "agent_labour_saving_per_pax_$": 4.5,
+    "disrupted_pax_per_year": 50000,
+    "operating_cost_per_year_$": 250000,
+    "net_annual_value_$": 20404850
+  },
+  "simulation_seconds": 56.7
+}

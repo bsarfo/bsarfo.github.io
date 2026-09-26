@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+mis520-*/models/*.pkl
+mis520-*/models/decision_log.csv
+mis520-*/data/*.csv
+mis520-*/data/bts/
