@@ -17,7 +17,12 @@ pip install -r requirements.txt
 python evaluate.py          # trains the delay model, runs all evaluations -> docs/results.md
 streamlit run app.py        # dashboard at http://localhost:8501
 pytest -q tests             # 10 scenario tests
+python build_simulator.py   # standalone class simulator -> simulator/ReRouteAI_Simulator.html
 ```
+
+**Class presentation:** open `simulator/ReRouteAI_Simulator.html` in any browser (offline, no install) and follow
+`simulator/PRESENTER_GUIDE.md`. The page re-solves 60 scenarios from the Python engine on load and shows whether it
+matches.
 
 Optional: `export GEMINI_API_KEY=...` to have Google Gemini write the explanations (the course's
 recommended LLM). Without a key a deterministic template is used, so the demo never depends on
