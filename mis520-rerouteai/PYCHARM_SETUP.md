@@ -2,10 +2,13 @@
 
 About 20 minutes the first time. Works on Windows and macOS.
 
-**What you get:** five green ▶ run buttons in PyCharm.
+**What you get:** six green ▶ run options in PyCharm. **"0. Run everything"** runs the whole pipeline in order
+(check → evaluate → tests → build simulator), opens the class simulator in your browser, then starts the dashboard.
+It stops at the first step that fails. The other five run one step each.
 
 | Button | What it does | Time |
 |---|---|---|
+| 0. Run everything | All of the steps below, in order, ending with the dashboard | ~3 min |
 | 1. Check setup | Confirms Python, packages and folder are right; trains the delay model | ~30 s |
 | 2. Evaluate | Trains and tests the model, runs the simulations, writes `docs/results.md` | ~1–2 min |
 | 3. Dashboard (Streamlit) | Opens the agent dashboard in your browser | stays running |
@@ -71,8 +74,11 @@ python verify_setup.py
 
 ## Step 5 — Run it
 
-Open the run dropdown at the top right (next to the green ▶). You will see the five configurations. Run them in
-this order the first time:
+Open the run dropdown at the top right (next to the green ▶) and pick **0. Run everything**, then press ▶.
+It takes about 3 minutes the first time. Tip: for a quicker rerun that skips the evaluation, run
+`python run_all.py --fast` in PyCharm's Terminal tab.
+
+To run steps one at a time instead, use this order:
 
 1. **1. Check setup** → should end with "All good."
 2. **2. Evaluate** → prints the results tables; saved to `docs/results.md`.
