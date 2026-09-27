@@ -31,7 +31,7 @@ class Chunk:
 def load_chunks(folder: pathlib.Path = POLICY_DIR) -> list[Chunk]:
     chunks = []
     for path in sorted(folder.glob("*.md")):
-        parts = re.split(r"^## ", path.read_text(), flags=re.M)
+        parts = re.split(r"^## ", path.read_text(encoding="utf-8"), flags=re.M)
         doc_title = parts[0].strip().splitlines()[0].lstrip("# ").strip()
         for i, part in enumerate(parts[1:], 1):
             heading, _, body = part.partition("\n")

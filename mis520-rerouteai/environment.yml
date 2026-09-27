@@ -1,0 +1,20 @@
+# Conda environment for ReRouteAI
+#   conda env create -f environment.yml
+#   conda activate rerouteai
+name: rerouteai
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy>=1.26
+  - pandas>=2.1
+  - scikit-learn>=1.4
+  - streamlit>=1.40
+  - altair>=5
+  - pytest>=8
+  - pip
+  # optional: Gemini explanations in the dashboard
+  # - pip:
+  #   - google-genai
+variables:
+  PYTHONUTF8: "1"   # UTF-8 everywhere, so Windows consoles handle €, →, ü

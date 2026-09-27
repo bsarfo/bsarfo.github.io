@@ -120,7 +120,7 @@ with tab_app:
                 else:
                     new = not LOG.exists()
                     LOG.parent.mkdir(exist_ok=True)
-                    with open(LOG, "a", newline="") as fh:
+                    with open(LOG, "a", newline="", encoding="utf-8") as fh:
                         w = csv.writer(fh)
                         if new:
                             w.writerow(["timestamp", "underwriter", "industry", "loan_amount",

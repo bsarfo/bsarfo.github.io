@@ -277,10 +277,10 @@ def write_report(r: dict) -> None:
           f"operating cost = **${ro['net_annual_value_$']:,} net per year**",
           "", f"Simulation runtime: {r['simulation_seconds']} s."]
     (ROOT / "docs").mkdir(exist_ok=True)
-    (ROOT / "docs" / "results.md").write_text("\n".join(L) + "\n")
-    (ROOT / "docs" / "results.json").write_text(json.dumps(r, indent=2, default=str))
+    (ROOT / "docs" / "results.md").write_text("\n".join(L) + "\n", encoding="utf-8")
+    (ROOT / "docs" / "results.json").write_text(json.dumps(r, indent=2, default=str), encoding="utf-8")
 
 
 if __name__ == "__main__":
     main()
-    print((ROOT / "docs" / "results.md").read_text())
+    print((ROOT / "docs" / "results.md").read_text(encoding="utf-8"))

@@ -58,7 +58,7 @@ def export() -> dict:
     }
     res = ROOT / "docs" / "results.json"
     if res.exists():
-        r = json.loads(res.read_text())
+        r = json.loads(res.read_text(encoding="utf-8"))
         data["modelCard"] = {"prAuc": r["model"]["pr_auc"], "brier": r["model"]["brier"],
                              "testRows": r["model"]["test_rows"], "lateRate": r["model"]["late_rate_test"],
                              "retrieval": r["retrieval"]}
@@ -98,8 +98,8 @@ def parity_cases(model, n: int = 60) -> list[dict]:
 
 def main() -> None:
     data = export()
-    html = TEMPLATE.read_text().replace("/*__SIM_DATA__*/null", json.dumps(data, separators=(",", ":")))
-    OUT.write_text(html)
+    html = TEMPLATE.read_text(encoding="utf-8").replace("/*__SIM_DATA__*/null", json.dumps(data, separators=(",", ":")))
+    OUT.write_text(html, encoding="utf-8")
     print(f"wrote {OUT} ({OUT.stat().st_size / 1024:.0f} KB), {len(data['parity'])} parity cases, "
           f"delay data: {data['source']}")
 

@@ -11,6 +11,8 @@ traveller). It **recommends and explains; a human approves**. Nothing is booked.
 
 ## Quick start
 
+**Using PyCharm + Anaconda?** Follow [`PYCHARM_SETUP.md`](PYCHARM_SETUP.md): one conda command, then five ready-made run buttons.
+
 ```bash
 cd mis520-rerouteai
 pip install -r requirements.txt

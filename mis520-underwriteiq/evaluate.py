@@ -172,10 +172,10 @@ def write_report(r: dict) -> None:
     L += [f"- {k}: {v:.1%}" for k, v in sorted(r["hybrid_decision_mix"].items(), key=lambda kv: -kv[1])]
     L += ["", "## Assumptions", ""] + [f"- {k}: {v}" for k, v in r["assumptions"].items()]
     (ROOT / "docs").mkdir(exist_ok=True)
-    (ROOT / "docs" / "results.md").write_text("\n".join(L) + "\n")
-    (ROOT / "docs" / "results.json").write_text(json.dumps(r, indent=2))
+    (ROOT / "docs" / "results.md").write_text("\n".join(L) + "\n", encoding="utf-8")
+    (ROOT / "docs" / "results.json").write_text(json.dumps(r, indent=2), encoding="utf-8")
 
 
 if __name__ == "__main__":
     res = main()
-    print((ROOT / "docs" / "results.md").read_text())
+    print((ROOT / "docs" / "results.md").read_text(encoding="utf-8"))

@@ -162,7 +162,7 @@ with tab_ask:
             else:
                 new = not LOG.exists()
                 LOG.parent.mkdir(exist_ok=True)
-                with open(LOG, "a", newline="") as fh:
+                with open(LOG, "a", newline="", encoding="utf-8") as fh:
                     w = csv.writer(fh)
                     if new:
                         w.writerow(["time", "agent", "inbound_delay", "profile", "perspective",
@@ -185,4 +185,4 @@ with tab_data:
     res = ROOT / "docs" / "results.md"
     if res.exists():
         with st.expander("Evaluation results (docs/results.md)"):
-            st.markdown(res.read_text())
+            st.markdown(res.read_text(encoding="utf-8"))
