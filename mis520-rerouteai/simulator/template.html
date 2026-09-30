@@ -1,0 +1,914 @@
+<meta charset="utf-8">
+<title>ReRouteAI Simulator</title>
+<meta name="description" content="Flight disruption recovery simulator for the MIS520 ReRouteAI project">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #071627; --panel: #0b1d31; --card: #11263b; --card-2: #0d3345; --edge: #28536b; --edge-soft: #1c3a52;
+  --text: #f4f8fc; --muted: #afc6d7; --dim: #7d98b0;
+  --accent: #45d7e8; --accent-ink: #062030;
+  --good: #3ccb8f; --warn: #f2b84b; --bad: #e0485f;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+  --base: #5b7690;
+  --display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --sans: "IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r: 10px;
+  --fs: 15px;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); color: var(--text); }
+body { margin: 0; font: 400 var(--fs)/1.5 var(--sans); padding-inline: 16px; padding-block: 0 40px; }
+body.present { --fs: 17px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: .01em; margin: 0; text-wrap: balance; }
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.num { font-variant-numeric: tabular-nums; }
+.label { font-size: .72rem; text-transform: uppercase; letter-spacing: .09em; color: var(--dim); font-weight: 600; }
+.muted { color: var(--muted); }
+.wrap { max-width: 1440px; margin: 0 auto; }
+
+/* header */
+header.top { background: var(--bg); padding-block: 14px 10px; border-bottom: 1px solid var(--edge-soft); }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.brand { display: flex; align-items: baseline; gap: 12px; margin-right: auto; }
+.brand h1 { font-size: 2rem; font-weight: 700; }
+.brand h1 span { color: var(--accent); }
+.brand .sub { font-family: var(--display); font-size: 1.15rem; color: var(--muted); font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
+.pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 11px; font-size: .8rem; font-weight: 600; border: 1px solid var(--edge); background: var(--card); white-space: nowrap; }
+.pill.ok { color: var(--good); border-color: color-mix(in srgb, var(--good) 45%, transparent); }
+.pill.warnp { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
+.pill.badp { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
+button.pill:hover { border-color: var(--accent); }
+.scenes { display: flex; align-items: center; gap: 6px; }
+.btn { border: 1px solid var(--edge); background: var(--card); border-radius: 8px; padding: 6px 12px; font-weight: 600; font-size: .88rem; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn[aria-pressed="true"] { background: var(--card-2); border-color: var(--accent); color: var(--accent); }
+.scene-count { font-family: var(--mono); font-size: .85rem; color: var(--muted); min-width: 4.5em; text-align: center; }
+
+.caption { margin-top: 10px; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: baseline; background: var(--panel); border: 1px solid var(--edge-soft); border-radius: var(--r); padding: 10px 14px; }
+.caption .n { font-family: var(--display); font-size: 1.5rem; font-weight: 700; color: var(--accent); grid-row: span 2; }
+.caption h2 { font-size: 1.35rem; }
+.caption p { margin: 0; color: var(--muted); max-width: 110ch; }
+body.present .caption h2 { font-size: 1.7rem; }
+body.present .caption p { font-size: 1.1rem; color: var(--text); }
+
+/* situation strip */
+.situation { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 10px; font-family: var(--mono); font-size: .85rem; color: var(--muted); }
+.situation b { color: var(--text); font-weight: 600; }
+.situation .late { color: var(--bad); }
+
+/* layout */
+.layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 18px; margin-top: 16px; }
+body.present .layout { grid-template-columns: minmax(0, 1fr); }
+body.present .rail { display: none; }
+@media (max-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+.rail { display: flex; flex-direction: column; gap: 14px; }
+.group { background: var(--panel); border: 1px solid var(--edge-soft); border-radius: var(--r); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.group h3 { font-size: 1.05rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.field output { font-family: var(--mono); color: var(--accent); font-size: .9rem; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+select { background: var(--card); border: 1px solid var(--edge); border-radius: 7px; padding: 6px 8px; width: 100%; }
+.check { display: flex; gap: 8px; align-items: center; font-size: .92rem; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--edge); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 6px 8px; font-weight: 600; font-size: .88rem; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.hint { font-size: .8rem; color: var(--dim); }
+
+.main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; }
+@media (max-width: 1100px) { .hero { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--edge-soft); border-radius: var(--r); padding: 14px 16px; min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.panel-head h2 { font-size: 1.3rem; }
+
+/* map */
+#map { width: 100%; height: auto; display: block; }
+.map-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .8rem; color: var(--muted); }
+.map-legend i { display: inline-block; width: 22px; height: 0; border-top: 3px solid; vertical-align: middle; margin-right: 6px; }
+@keyframes dash { to { stroke-dashoffset: -28; } }
+.flow { stroke-dasharray: 10 4; animation: dash 1.2s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .flow { animation: none; } }
+
+/* recommendation board */
+.board { display: flex; flex-direction: column; gap: 12px; }
+.board .route { font-family: var(--display); font-size: 2.3rem; font-weight: 700; line-height: 1; }
+body.present .board .route { font-size: 2.9rem; }
+.legs { display: flex; flex-direction: column; gap: 6px; }
+.leg { display: grid; grid-template-columns: 5.6em 1fr auto; gap: 10px; align-items: center; background: var(--card); border: 1px solid var(--edge-soft); border-radius: 8px; padding: 7px 10px; font-family: var(--mono); font-size: .9rem; }
+.leg .fid { color: var(--accent); font-weight: 600; }
+.chip { font-family: var(--sans); font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 5px; border: 1px solid; white-space: nowrap; }
+.chip.prot { color: var(--good); border-color: color-mix(in srgb, var(--good) 50%, transparent); }
+.chip.sep { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 50%, transparent); }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 560px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stat .v { font-family: var(--display); font-size: 1.9rem; font-weight: 600; line-height: 1.05; font-variant-numeric: tabular-nums; }
+body.present .stat .v { font-size: 2.4rem; }
+.stat .v.good { color: var(--good); } .stat .v.warn { color: var(--warn); } .stat .v.bad { color: var(--bad); }
+.note { font-size: .88rem; color: var(--muted); background: var(--card); border: 1px dashed var(--edge); border-radius: 8px; padding: 8px 10px; }
+.why { font-size: .92rem; color: var(--muted); margin: 0; }
+.why b { color: var(--text); }
+
+/* tabs */
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--edge-soft); }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px; font-weight: 600; color: var(--muted); font-size: .95rem; }
+.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.tabpanel { padding-top: 14px; }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th { text-align: left; font-size: .7rem; text-transform: uppercase; letter-spacing: .07em; color: var(--dim); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--edge); white-space: nowrap; }
+td { padding: 7px 8px; border-bottom: 1px solid var(--edge-soft); vertical-align: middle; }
+td.r, th.r { text-align: right; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: color-mix(in srgb, var(--card) 70%, transparent); }
+tbody tr.sel { background: var(--card-2); }
+tbody tr.best td:first-child { color: var(--accent); font-weight: 700; }
+.pbar { display: inline-block; width: 54px; height: 6px; background: var(--edge-soft); border-radius: 3px; vertical-align: middle; margin-right: 6px; overflow: hidden; }
+.pbar > span { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.stack { display: flex; height: 10px; width: 160px; border-radius: 3px; overflow: hidden; gap: 2px; background: transparent; }
+.stack > span { display: block; height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .8rem; color: var(--muted); margin: 6px 0 10px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.tag { font-size: .66rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 4px; background: var(--card); border: 1px solid var(--edge); color: var(--muted); margin-left: 6px; white-space: nowrap; }
+
+/* lab */
+.lab-controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: end; }
+.lab-controls .field { min-width: 150px; flex: 1 1 150px; }
+.headline { font-family: var(--display); font-size: 1.6rem; font-weight: 600; line-height: 1.2; margin: 14px 0 6px; text-wrap: balance; }
+body.present .headline { font-size: 2rem; }
+.headline em { font-style: normal; color: var(--accent); }
+.progress { height: 4px; background: var(--edge-soft); border-radius: 2px; overflow: hidden; margin-top: 10px; }
+.progress > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+#panel-lab .grid2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+#lab-table { font-size: .82rem; }
+@media (max-width: 900px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+svg text { font-family: var(--sans); }
+.search-list { font-family: var(--mono); font-size: .82rem; list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-direction: column; gap: 3px; max-height: 330px; overflow: auto; }
+.search-list li { display: grid; grid-template-columns: 2em 1fr auto; gap: 8px; padding: 3px 6px; border-radius: 5px; background: var(--card); opacity: .25; transition: opacity .2s; }
+.search-list li.on { opacity: 1; }
+.search-list li.goal { outline: 1px solid var(--accent); }
+.bigcount { font-family: var(--display); font-size: 2.6rem; font-weight: 700; color: var(--accent); line-height: 1; }
+.cols3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 900px) { .cols3 { grid-template-columns: minmax(0, 1fr); } }
+.box { background: var(--card); border: 1px solid var(--edge-soft); border-radius: 8px; padding: 10px 12px; }
+.box h3 { font-size: 1.05rem; margin-bottom: 4px; }
+.box p, .box ul { margin: 0; font-size: .88rem; color: var(--muted); }
+.box ul { padding-left: 18px; }
+dialog { background: var(--panel); color: var(--text); border: 1px solid var(--edge); border-radius: var(--r); max-width: min(760px, calc(100vw - 32px)); padding: 16px 18px; }
+dialog::backdrop { background: rgba(2, 10, 20, .7); }
+kbd { font-family: var(--mono); font-size: .78rem; border: 1px solid var(--edge); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--card); }
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="bar">
+    <div class="brand"><h1>ReRoute<span>AI</span></h1><span class="sub">Disruption recovery simulator</span></div>
+    <button class="pill" id="parity" type="button" title="Open the parity report">Checking engine…</button>
+    <span class="pill" id="datasrc"></span>
+    <div class="scenes">
+      <button class="btn" id="prev" type="button" aria-label="Previous scene">◀</button>
+      <span class="scene-count" id="scount">1 / 10</span>
+      <button class="btn" id="next" type="button" aria-label="Next scene">▶</button>
+      <button class="btn" id="present" type="button" aria-pressed="false" title="Presenter mode (P)">Presenter</button>
+    </div>
+  </div>
+  <div class="caption" id="caption"><span class="n" id="cap-n">1</span><h2 id="cap-t"></h2><p id="cap-p"></p></div>
+  <div class="situation" id="situation"></div>
+</header>
+
+<div class="layout">
+  <aside class="rail" aria-label="Scenario controls">
+    <div class="group">
+      <h3>Disruption</h3>
+      <div class="field"><div class="row"><label for="delay">Inbound delay into Zürich</label><output id="delay-o"></output></div>
+        <input type="range" id="delay" min="0" max="300" step="5" value="95"></div>
+      <div class="field"><label for="month">Month</label><select id="month"></select></div>
+      <div class="field"><label for="dow">Weekday</label><select id="dow"></select></div>
+      <label class="check"><input type="checkbox" id="bag" checked> Checked bag (+10 min to every connection)</label>
+    </div>
+    <div class="group">
+      <h3>Who is deciding?</h3>
+      <div class="seg" role="group" aria-label="Optimize for">
+        <button type="button" id="p-trav" aria-pressed="true">Traveller</button>
+        <button type="button" id="p-air" aria-pressed="false">Airline</button>
+      </div>
+      <div class="field"><label for="profile">Traveller profile</label><select id="profile"></select></div>
+      <div class="field"><div class="row"><label for="vot">Priority: cost ← → time</label><output id="vot-o"></output></div>
+        <input type="range" id="vot" min="0" max="500" step="5" value="35">
+        <span class="hint">Value of one hour of late arrival, in dollars.</span></div>
+    </div>
+    <div class="group">
+      <h3>Rules &amp; costs</h3>
+      <label class="check"><input type="checkbox" id="eu" checked> EU261 compensation applies</label>
+      <span class="hint">Turn off for a weather or air-traffic-control delay (extraordinary circumstances).</span>
+      <div class="field"><div class="row"><label for="hotel">Hotel per night</label><output id="hotel-o"></output></div>
+        <input type="range" id="hotel" min="0" max="400" step="10" value="180"></div>
+    </div>
+    <div class="group">
+      <h3>Keyboard</h3>
+      <span class="hint"><kbd>←</kbd> <kbd>→</kbd> scenes · <kbd>P</kbd> presenter mode · <kbd>R</kbd> run simulation · <kbd>1</kbd>–<kbd>5</kbd> tabs</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <section class="hero">
+      <div class="panel">
+        <div class="panel-head"><h2>Network</h2><span class="label" id="map-sub"></span></div>
+        <svg id="map" viewBox="0 0 640 400" role="img" aria-label="Map of the recovery network"></svg>
+        <div class="map-legend">
+          <span><i style="border-color:var(--accent)"></i>Selected route</span>
+          <span><i style="border-color:var(--bad);border-top-style:dashed"></i>Missed connection</span>
+          <span><i style="border-color:var(--edge)"></i>Other feasible flights</span>
+        </div>
+      </div>
+      <div class="panel board" id="board" aria-live="polite"></div>
+    </section>
+
+    <section class="panel">
+      <div class="tabs" role="tablist" id="tabs">
+        <button role="tab" aria-selected="true" data-tab="options" id="tab-options">1 · Options</button>
+        <button role="tab" aria-selected="false" data-tab="lab" id="tab-lab">2 · Simulation lab</button>
+        <button role="tab" aria-selected="false" data-tab="sens" id="tab-sens">3 · Sensitivity</button>
+        <button role="tab" aria-selected="false" data-tab="search" id="tab-search">4 · Search</button>
+        <button role="tab" aria-selected="false" data-tab="method" id="tab-method">5 · Assumptions</button>
+      </div>
+
+      <div class="tabpanel" id="panel-options" role="tabpanel">
+        <div class="legend" id="comp-legend"></div>
+        <div class="tbl-wrap"><table id="opts"></table></div>
+        <p class="hint">Click a row to show it on the map. Tags mark what each baseline rule would pick.</p>
+      </div>
+
+      <div class="tabpanel" id="panel-lab" role="tabpanel" hidden>
+        <div class="lab-controls">
+          <div class="field"><label for="lab-mode">Disruptions</label>
+            <select id="lab-mode"><option value="this">Replay this disruption</option><option value="random" selected>Random: 60–240 min late, any month</option></select></div>
+          <div class="field"><label for="lab-n">Simulated disruptions</label>
+            <select id="lab-n"><option>200</option><option selected>1000</option><option>5000</option></select></div>
+          <div class="field"><div class="row"><label for="lab-stress">Stress: delays worse than the model</label><output id="lab-stress-o"></output></div>
+            <input type="range" id="lab-stress" min="0" max="100" step="10" value="0"></div>
+          <div class="field" style="min-width:110px;flex:0 1 110px"><label for="lab-seed">Seed</label>
+            <input id="lab-seed" class="mono" type="number" value="520" style="background:var(--card);border:1px solid var(--edge);border-radius:7px;padding:6px 8px"></div>
+          <button class="btn primary" id="lab-run" type="button">Run simulation</button>
+        </div>
+        <div class="progress"><span id="lab-prog"></span></div>
+        <p class="headline" id="lab-head">Press <em>Run simulation</em> to replay disruptions with delays drawn from the model.</p>
+        <div class="grid2">
+          <div><svg id="lab-chart" viewBox="0 0 520 250" role="img" aria-label="Average realised cost by strategy"></svg></div>
+          <div class="tbl-wrap"><table id="lab-table"></table></div>
+        </div>
+        <p class="hint" id="lab-foot"></p>
+      </div>
+
+      <div class="tabpanel" id="panel-sens" role="tabpanel" hidden>
+        <div class="lab-controls">
+          <div class="field" style="max-width:320px"><label for="sens-var">Sweep</label>
+            <select id="sens-var"><option value="vot">Value of time ($ per hour)</option><option value="delay">Inbound delay (minutes)</option></select></div>
+        </div>
+        <p class="headline" id="sens-head"></p>
+        <svg id="sens-chart" viewBox="0 0 900 360" role="img" aria-label="Expected cost of the leading routes across the sweep"></svg>
+        <p class="hint">Each line is one route's expected cost. The lowest line wins; where lines cross, the recommendation flips. The band on top shows the winner across the range.</p>
+      </div>
+
+      <div class="tabpanel" id="panel-search" role="tabpanel" hidden>
+        <p class="why">Nodes are "landed at airport X at time t". Edges are flights you can still make (minimum connection time and seats respected). Edge weight = value of time × minutes + cash + 200 × (−ln P), so connection probabilities add up along a path and Dijkstra stays exact. A* adds a heuristic: the fastest possible remaining flying time, which never overestimates.</p>
+        <div class="grid2" style="margin-top:12px">
+          <div class="box"><div class="panel-head"><h3>Dijkstra</h3><span class="bigcount" id="dj-n"></span></div><div class="hint">nodes expanded</div><div id="dj-route" class="mono"></div><ol class="search-list" id="dj-list"></ol></div>
+          <div class="box"><div class="panel-head"><h3>A*</h3><span class="bigcount" id="as-n"></span></div><div class="hint">nodes expanded</div><div id="as-route" class="mono"></div><ol class="search-list" id="as-list"></ol></div>
+        </div>
+        <p style="margin-top:10px"><button class="btn" id="search-replay" type="button">Replay expansion</button> <span class="hint" id="search-note"></span></p>
+      </div>
+
+      <div class="tabpanel" id="panel-method" role="tabpanel" hidden>
+        <div class="cols3" id="method-boxes"></div>
+        <h3 style="margin:18px 0 6px;font-size:1.2rem">Timetable used by the simulator <span class="tag">illustrative</span></h3>
+        <div class="tbl-wrap"><table id="tt"></table></div>
+      </div>
+    </section>
+  </main>
+</div>
+</div>
+
+<dialog id="parity-dlg">
+  <div class="panel-head"><h2>Engine parity report</h2><button class="btn" id="parity-close" type="button">Close</button></div>
+  <p class="why" id="parity-text"></p>
+  <div class="tbl-wrap"><table id="parity-tbl"></table></div>
+</dialog>
+
+<script>
+const DATA = /*__SIM_DATA__*/null;
+</script>
+<script>
+"use strict";
+/* ============================================================ engine (port of rerouteai/*.py) */
+const AP = DATA.airports, FLIGHTS = DATA.flights, EDGES = DATA.edges, CANCELLED = 10;
+const FBY = Object.fromEntries(FLIGHTS.map(f => [f.id, f]));
+const DISR = DATA.disruption, ASM0 = DATA.assumptions;
+const LOWS = [-Infinity, ...EDGES], HIGHS = [...EDGES, 480];
+const MIDS = [0, 7.5, 22.5, 37.5, 52.5, 75, 105, 150, 240, 360];
+
+function probAtMost(p, minutes) {
+  if (minutes < 0) return 0;
+  let total = 0;
+  for (let i = 0; i < LOWS.length; i++) {
+    const lo = LOWS[i] === -Infinity ? 0 : LOWS[i], hi = HIGHS[i];
+    if (i === 0) total += p[0];
+    else if (minutes >= hi) total += p[i];
+    else if (minutes > lo) total += p[i] * (minutes - lo) / (hi - lo);
+  }
+  return Math.min(total, 1 - p[CANCELLED]);
+}
+function expDelay(p) {
+  let s = 0, w = 0;
+  for (let i = 0; i < CANCELLED; i++) { s += p[i] * MIDS[i]; w += p[i]; }
+  return s / Math.max(w, 1e-9);
+}
+function eu261(delay, km) {
+  if (delay < 180) return 0;
+  if (km <= 1500) return 250;
+  if (km <= 3500) return 400;
+  return delay < 240 ? 300 : 600;
+}
+const mct = a => AP[a].mct;
+
+function makeScenario(st) {
+  const s = { ...st, at: DISR.at, destination: DISR.destination, scheduledIn: DISR.scheduledIn,
+    plannedArrival: DISR.plannedArrival, km: DISR.journeyKm };
+  s.ready = s.scheduledIn + s.delay + mct(s.at) + (s.bag ? 10 : 0);
+  s.distTable = DATA.dists[`${s.month}-${s.dow}`];
+  s.dist = f => s.distTable[f.id];
+  return s;
+}
+function pMakeFirst(s, f) {
+  const need = s.ready - f.dep, p = s.dist(f);
+  if (need <= 0) return 1 - p[CANCELLED];
+  return Math.max(0, 1 - probAtMost(p, need) - p[CANCELLED]);
+}
+function pConnect(s, prev, nxt) {
+  const slack = nxt.dep - prev.arr - mct(nxt.origin) - (s.bag ? 10 : 0);
+  return probAtMost(s.dist(prev), slack) * (1 - s.dist(nxt)[CANCELLED]);
+}
+function successors(s, node) {
+  const out = [];
+  if (node === null) {
+    for (const f of FLIGHTS) if (f.origin === s.at && f.dep >= s.ready && f.seats > 0) {
+      const p = pMakeFirst(s, f); if (p > 0.01) out.push([f, p]);
+    }
+    return out;
+  }
+  for (const f of FLIGHTS) if (f.origin === node.dest && f.dest !== s.at && f.seats > 0 && f.dep >= node.arr + mct(f.origin)) {
+    const p = pConnect(s, node, f); if (p > 0.01) out.push([f, p]);
+  }
+  return out;
+}
+function stillCatchable(s) {
+  return FLIGHTS.filter(f => f.origin === s.at && f.dest === s.destination && s.ready - DATA.hopeWindow <= f.dep && f.dep < s.ready)
+    .map(f => [f, pMakeFirst(s, f)]);
+}
+function enumerateIts(s, maxLegs = 3) {
+  const out = [];
+  const dfs = (node, legs, seen) => {
+    if (legs.length && legs[legs.length - 1].f.dest === s.destination) { out.push(legs.slice()); return; }
+    if (legs.length === maxLegs) return;
+    for (const [f, p] of successors(s, node)) {
+      if (seen.has(f.dest)) continue;
+      legs.push({ f, p });
+      dfs(f, legs, new Set([...seen, f.dest]));
+      legs.pop();
+    }
+  };
+  dfs(null, [], new Set([s.at]));
+  return out;
+}
+function fallback(s, at, t) {
+  const options = [];
+  for (const f of FLIGHTS) {
+    if (f.origin !== at || !f.protected || f.seats === 0 || f.dep < t + mct(at)) continue;
+    const pf = 1 - s.dist(f)[CANCELLED];
+    if (f.dest === s.destination) { options.push([f.arr, pf]); continue; }
+    for (const g of FLIGHTS) if (g.origin === f.dest && g.dest === s.destination && g.protected && g.seats > 0 && g.dep >= f.arr + mct(g.origin))
+      options.push([g.arr, pf * pConnect(s, f, g)]);
+  }
+  options.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  let remaining = 1, arr = 0, night = 0;
+  for (const [a, p] of options) { arr += remaining * p * a; night += remaining * p * (a >= 1440 ? 1 : 0); remaining *= 1 - p; }
+  arr += remaining * (1440 + 720); night += remaining;
+  return [arr, night];
+}
+const itLabel = legs => [legs[0].f.origin, ...legs.map(l => l.f.dest)].join(" → ");
+const itIds = legs => legs.map(l => l.f.id);
+
+function score(s, legs, prof, persp, asm) {
+  const fl = legs.map(l => l.f), last = fl[fl.length - 1], dl = s.dist(last), km = s.km;
+  const base = last.arr - s.plannedArrival;
+  const expOk = base + expDelay(dl);
+  const pOk = legs.reduce((a, l) => a * l.p, 1);
+  const euOk = () => {
+    const p180 = base < 180 ? probAtMost(dl, 180 - base) : 0;
+    const p240 = base < 240 ? probAtMost(dl, 240 - base) : 0;
+    const operate = 1 - dl[CANCELLED];
+    const full = eu261(10000, km), half = eu261(200, km);
+    return (Math.max(p240 - p180, 0) * half + Math.max(operate - p240, 0) * full) / Math.max(operate, 1e-9);
+  };
+  const fails = []; let reach = 1;
+  for (const l of legs) {
+    const pf = reach * (1 - l.p);
+    if (pf > 0) { const [a, n] = fallback(s, l.f.origin, Math.max(l.f.dep, s.ready)); fails.push([pf, a - s.plannedArrival, n]); }
+    reach *= l.p;
+  }
+  const expDel = pOk * expOk + fails.reduce((a, [p, d]) => a + p * d, 0);
+  const pNight = fails.reduce((a, [p, , n]) => a + p * n, 0) + (last.arr >= 1440 ? pOk : 0);
+  const travCash = fl.filter(f => !f.protected).reduce((a, f) => a + f.fare, 0);
+  let airCash = fl.filter(f => f.protected && f.carrier !== "LX").reduce((a, f) => a + f.fare * asm.interlineShare, 0);
+  airCash += fl.filter(f => f.carrier === "LX").reduce((a, f) => a + f.fare * (f.seats <= 2 ? 0.5 : 0.1), 0);
+  const eOk = asm.eu261 ? euOk() : 0;
+  const eFail = asm.eu261 ? fails.reduce((a, [p, d]) => a + p * eu261(d, km), 0) : 0;
+  const expEu = (pOk * eOk + eFail) * DATA.eurToUsd;
+  const care = asm.hotel * pNight + asm.meals * (expDel > 120 ? 1 : 0);
+  const stops = fl.length - 1;
+  const bd = persp === "traveller" ? [
+    ["Out-of-pocket fares", travCash],
+    ["Value of time", prof.vot * Math.max(expDel, 0) / 60],
+    ["Connections (inconvenience)", prof.stop * stops],
+    ["Overnight risk (self-paid)", asm.eu261 ? 0 : asm.hotel * pNight],
+  ] : [
+    ["Rebooking / interline", airCash],
+    ["Expected EU261", expEu],
+    ["Meals & hotel", care],
+    ["Customer goodwill", asm.goodwill * Math.max(expDel, 0) / 60],
+    ["Reimbursed separate ticket", travCash],
+  ];
+  return { legs, fl, label: itLabel(legs), ids: itIds(legs), pOk, arrOk: last.arr + expDelay(dl),
+    expArr: s.plannedArrival + expDel, expDel, travCash, airCash, expEu, pNight, breakdown: bd,
+    total: bd.reduce((a, [, v]) => a + v, 0) };
+}
+function rankAll(s, prof, persp, asm) {
+  return enumerateIts(s).map(l => score(s, l, prof, persp, asm)).sort((a, b) => a.total - b.total);
+}
+function baselines(ranked, s) {
+  if (!ranked.length) return {};
+  const minBy = (arr, key) => arr.reduce((b, x) => { const kb = key(b), kx = key(x); for (let i = 0; i < kb.length; i++) { if (kx[i] < kb[i]) return x; if (kx[i] > kb[i]) return b; } return b; });
+  const earliest = minBy(ranked, x => [x.fl[x.fl.length - 1].arr, x.travCash]);
+  const cheapest = minBy(ranked, x => [x.travCash, x.fl[x.fl.length - 1].arr]);
+  const cand = ranked.filter(x => x.fl.length === 1 && x.fl[0].carrier === "LX" && x.fl[0].dep >= s.ready);
+  const same = cand.length ? minBy(cand, x => [x.fl[0].dep]) : null;
+  return { earliest, cheapest, same };
+}
+function minTimeTo(dest) {
+  const best = { [dest]: 0 };
+  for (let k = 0; k < Object.keys(AP).length; k++)
+    for (const f of FLIGHTS) if (f.dest in best) {
+      const c = best[f.dest] + (f.arr - f.dep);
+      if (c < (f.origin in best ? best[f.origin] : Infinity)) best[f.origin] = c;
+    }
+  return best;
+}
+function search(s, votMin, lam, astar) {
+  const h = astar ? minTimeTo(s.destination) : {};
+  const heur = a => astar ? votMin * (h[a] ?? 0) : 0;
+  const cash = f => f.protected ? 0 : f.fare;
+  let counter = 0;
+  const heap = [[heur(s.at), 0, 0, null, s.scheduledIn + s.delay, []]];
+  const cmp = (a, b) => a[0] - b[0] || a[1] - b[1];
+  const done = new Set(), order = [];
+  while (heap.length) {
+    heap.sort(cmp);
+    const [fs, , g, node, t, path] = heap.shift();
+    const key = node ? node.id : "START";
+    if (done.has(key)) continue;
+    done.add(key);
+    order.push({ key, at: node ? node.dest : s.at, g, f: fs });
+    if (node && node.dest === s.destination) return { path, g, expanded: order.length, order };
+    for (const [f, p] of successors(s, node)) {
+      if (done.has(f.id)) continue;
+      const g2 = g + votMin * (f.arr - t) + cash(f) + lam * -Math.log(Math.max(p, 1e-6));
+      counter++;
+      heap.push([g2 + heur(f.dest), counter, g2, f, f.arr, [...path, f]]);
+    }
+  }
+  return { path: null, g: Infinity, expanded: order.length, order };
+}
+/* Monte Carlo replay (port of evaluate.realise) */
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function sampleDelay(p, rng, worse) {
+  let q = p.slice();
+  if (worse) { for (let i = 1; i < q.length; i++) q[i] *= 1 + worse; const rest = q.slice(1).reduce((a, b) => a + b, 0); q[0] = Math.max(1 - rest, 0.01); const z = q.reduce((a, b) => a + b, 0); q = q.map(x => x / z); }
+  let u = rng(), b = 0, c = 0;
+  for (; b < q.length; b++) { c += q[b]; if (u < c) break; }
+  if (b >= q.length) b = q.length - 1;
+  if (b === CANCELLED) return Infinity;
+  const lows = [-10, ...EDGES], highs = [...EDGES, 480];
+  const lo = Math.max(lows[b], 0);
+  return lo + rng() * (highs[b] - lo);
+}
+function realise(s, sc, prof, persp, asm, rng, worse) {
+  const legs = sc.fl; let arrival = null, failed = false, prevDelay = null;
+  for (let i = 0; i < legs.length; i++) {
+    const f = legs[i];
+    if (i > 0) { const pr = legs[i - 1]; const slack = f.dep - pr.arr - mct(f.origin) - (s.bag ? 10 : 0); if (prevDelay > slack) failed = true; }
+    const dl = sampleDelay(s.dist(f), rng, worse);
+    if (failed || dl === Infinity) { arrival = fallback(s, f.origin, Math.max(f.dep, s.ready))[0]; failed = true; break; }
+    prevDelay = dl;
+  }
+  if (arrival === null) arrival = legs[legs.length - 1].arr + prevDelay;
+  const delay = Math.max(arrival - s.plannedArrival, 0);
+  const comp = asm.eu261 ? eu261(delay, s.km) * DATA.eurToUsd : 0;
+  const trav = sc.travCash + prof.vot * delay / 60 + prof.stop * (legs.length - 1);
+  const air = sc.airCash + sc.travCash + comp + asm.hotel * (arrival >= 1440 ? 1 : 0) + asm.goodwill * delay / 60;
+  return { cost: persp === "traveller" ? trav : air, delay, within3: delay < 180, failed };
+}
+
+/* ============================================================ state & helpers */
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const PROF_NAMES = Object.keys(DATA.profiles);
+const COMP_COLORS = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)"];
+const state = { delay: 95, month: 7, dow: 5, bag: true, persp: "traveller", profile: "Leisure traveller", vot: 35, eu261: true, hotel: 180, selected: null, tab: "options" };
+const $ = id => document.getElementById(id);
+const hhmm = m => { m = Math.round(m); const d = Math.floor(m / 1440), r = ((m % 1440) + 1440) % 1440; return `${String(Math.floor(r / 60)).padStart(2, "0")}:${String(r % 60).padStart(2, "0")}${d > 0 ? " +1" : ""}`; };
+const usd = v => "$" + Math.round(v).toLocaleString("en-US");
+const pct = v => Math.round(v * 100) + "%";
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const asmOf = st => ({ ...ASM0, eu261: st.eu261, hotel: st.hotel });
+const profOf = st => ({ vot: st.vot, stop: DATA.profiles[st.profile].stop });
+
+let S, RANKED, BASE;
+function compute() {
+  S = makeScenario(state);
+  RANKED = rankAll(S, profOf(state), state.persp, asmOf(state));
+  BASE = baselines(RANKED, S);
+  if (!state.selected || !RANKED.find(r => r.ids.join() === state.selected)) state.selected = RANKED[0] ? RANKED[0].ids.join() : null;
+}
+
+/* ============================================================ rendering */
+function renderSituation() {
+  const land = S.scheduledIn + S.delay, orig = FBY[DISR.originalConnection], missed = S.ready > orig.dep;
+  $("situation").innerHTML = `<span>${esc(DISR.originFlight)} lands <b>${hhmm(land)}</b> <span class="late">(+${S.delay} min)</span></span>
+    <span>ready to board <b>${hhmm(S.ready)}</b></span>
+    <span>connection ${orig.id} ${hhmm(orig.dep)} <b class="${missed ? "late" : ""}">${missed ? "MISSED" : "still on"}</b></span>
+    <span>promised arrival WAW <b>${hhmm(S.plannedArrival)}</b></span>
+    <span>${MONTHS[state.month - 1]}, ${DAYS[state.dow - 1]}</span>`;
+}
+function proj(a) { const x0 = 3.2, x1 = 23.2, y0 = 53.4, y1 = 46.3; const p = AP[a]; return [40 + (p.lon - x0) / (x1 - x0) * 570, 30 + (y0 - p.lat) / (y0 - y1) * 340]; }
+function arc(a, b, bend = .18) { const [x1, y1] = proj(a), [x2, y2] = proj(b); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, dx = x2 - x1, dy = y2 - y1; return `M${x1},${y1} Q${mx - dy * bend},${my + dx * bend} ${x2},${y2}`; }
+function renderMap() {
+  const sel = RANKED.find(r => r.ids.join() === state.selected);
+  const orig = FBY[DISR.originalConnection], missed = S.ready > orig.dep;
+  const pairs = new Set(); RANKED.forEach(r => r.fl.forEach(f => pairs.add(f.origin + "-" + f.dest)));
+  let g = "";
+  const [zx, zy] = proj("ZRH");
+  g += `<path d="M4,${zy - 40} Q${zx - 90},${zy - 70} ${zx - 8},${zy - 4}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="3 5"/>
+        <text x="8" y="${zy - 50}" fill="var(--muted)" font-size="12">from BOS · ${esc(DISR.originFlight.split(" ")[0])} +${S.delay}m</text>`;
+  pairs.forEach(k => { const [a, b] = k.split("-"); g += `<path d="${arc(a, b)}" fill="none" stroke="var(--edge)" stroke-width="1.5"/>`; });
+  if (missed) {
+    g += `<path d="${arc("ZRH", "WAW", -.12)}" fill="none" stroke="var(--bad)" stroke-width="2" stroke-dasharray="6 5"/>`;
+    const [ax, ay] = proj("ZRH"), [bx, by] = proj("WAW"); const mx = (ax + bx) / 2 + (by - ay) * .06, my = (ay + by) / 2 - (bx - ax) * .06;
+    g += `<text x="${mx}" y="${my + 6}" text-anchor="middle" fill="var(--bad)" font-size="20" font-weight="700">✕</text>`;
+  }
+  if (sel) sel.fl.forEach(f => {
+    g += `<path d="${arc(f.origin, f.dest)}" fill="none" stroke="var(--accent)" stroke-width="4" class="flow"/>`;
+    const [x1, y1] = proj(f.origin), [x2, y2] = proj(f.dest), bend = .18;
+    const cx = (x1 + x2) / 2 - (y2 - y1) * bend, cy = (y1 + y2) / 2 + (x2 - x1) * bend;
+    const lx = (x1 + 2 * cx + x2) / 4, ly = (y1 + 2 * cy + y2) / 4 + (cy > (y1 + y2) / 2 ? 16 : -8);
+    g += `<text x="${lx}" y="${ly}" text-anchor="middle" fill="var(--accent)" font-size="12" font-family="IBM Plex Mono, monospace" font-weight="600">${f.id} ${hhmm(f.dep)}</text>`;
+  });
+  for (const a of Object.keys(AP)) {
+    if (a === "BOS") continue;
+    const [x, y] = proj(a), key = a === "ZRH" || a === "WAW";
+    const on = sel && sel.fl.some(f => f.origin === a || f.dest === a);
+    g += `<circle cx="${x}" cy="${y}" r="${key ? 9 : 6}" fill="var(--bg)" stroke="${a === "ZRH" && missed ? "var(--bad)" : on ? "var(--accent)" : "var(--muted)"}" stroke-width="${key ? 3 : 2}"/>
+          <text x="${x}" y="${y + (a === "VIE" || a === "KRK" || a === "MUC" ? 24 : -14)}" text-anchor="middle" fill="var(--text)" font-size="14" font-weight="700" font-family="IBM Plex Mono, monospace">${a}</text>
+          <text x="${x}" y="${y + (a === "VIE" || a === "KRK" || a === "MUC" ? 37 : -27) - (a === "VIE" || a === "KRK" || a === "MUC" ? 0 : 0)}" text-anchor="middle" fill="var(--dim)" font-size="10">MCT ${AP[a].mct}m</text>`;
+  }
+  $("map").innerHTML = g;
+  $("map-sub").textContent = `${RANKED.length} feasible routes`;
+}
+function renderBoard() {
+  const b = RANKED[0];
+  if (!b) { $("board").innerHTML = `<h2>No feasible route</h2><p class="why">Escalate to a human agent.</p>`; return; }
+  const sel = RANKED.find(r => r.ids.join() === state.selected) || b, isBest = sel === b;
+  const second = RANKED[1];
+  const pCls = sel.pOk >= .85 ? "good" : sel.pOk >= .6 ? "warn" : "bad";
+  const catch_ = stillCatchable(S).map(([f, p]) => `Watching ${f.id} (${hhmm(f.dep)}): ${pct(p)} chance it leaves late enough to catch. Not relied on.`).join(" ");
+  const dTotal = second ? second.total - b.total : 0;
+  $("board").innerHTML = `
+    <div class="panel-head"><h2>${isBest ? "Recommendation" : "Selected option"}</h2><span class="label">${state.persp === "traveller" ? "traveller view · " + esc(state.profile) : "airline view"}</span></div>
+    <div class="route">${esc(sel.label)}</div>
+    <div class="legs">${sel.fl.map(f => `<div class="leg"><span class="fid">${f.id}</span><span>${f.origin} ${hhmm(f.dep)} → ${f.dest} ${hhmm(f.arr)} <span class="muted">· ${esc(f.carrierName)}</span></span>
+      <span class="chip ${f.protected ? "prot" : "sep"}">${f.protected ? "protected" : "separate ticket"}</span></div>`).join("")}</div>
+    <div class="stats">
+      <div class="stat"><div class="label">Plan works</div><div class="v ${pCls}">${pct(sel.pOk)}</div></div>
+      <div class="stat"><div class="label">Arrives if it works</div><div class="v">${hhmm(sel.arrOk)}</div></div>
+      <div class="stat"><div class="label">Expected delay</div><div class="v">${(sel.expDel / 60).toFixed(1)} h</div></div>
+      <div class="stat"><div class="label">Expected ${state.persp} cost</div><div class="v">${usd(sel.total)}</div></div>
+    </div>
+    <p class="why">${isBest ? (second ? `Beats the runner-up <b>${esc(second.label)}</b> (${second.ids.join(" + ")}) by <b>${usd(dTotal)}</b> in expected ${state.persp} cost.` : "Only feasible route.")
+      : `Ranked #${RANKED.indexOf(sel) + 1}; costs <b>${usd(sel.total - b.total)}</b> more than the recommendation.`}
+      Largest cost driver: <b>${esc([...sel.breakdown].sort((x, y) => y[1] - x[1])[0][0].toLowerCase())}</b>.</p>
+    ${catch_ ? `<div class="note">${esc(catch_)}</div>` : ""}`;
+}
+function renderOptions() {
+  const comps = RANKED[0] ? RANKED[0].breakdown.map(x => x[0]) : [];
+  $("comp-legend").innerHTML = comps.map((c, i) => `<span><i style="background:${COMP_COLORS[i]}"></i>${esc(c)}</span>`).join("");
+  const maxT = Math.max(1, ...RANKED.map(r => r.total));
+  const tagFor = r => [BASE.earliest === r && "earliest arrival", BASE.cheapest === r && "lowest fare", BASE.same === r && "next direct, same airline"].filter(Boolean).map(t => `<span class="tag">${t}</span>`).join("");
+  $("opts").innerHTML = `<thead><tr><th>#</th><th>Route</th><th>Flights</th><th>Departs</th><th>Arrives if OK</th><th>Plan works</th><th class="r">Exp. delay</th><th class="r">Traveller pays</th><th class="r">Airline pays</th><th>Cost breakdown</th><th class="r">Expected cost</th></tr></thead>
+  <tbody>${RANKED.map((r, i) => `<tr data-k="${r.ids.join()}" class="${i === 0 ? "best" : ""} ${r.ids.join() === state.selected ? "sel" : ""}">
+    <td class="num">${i + 1}</td><td>${esc(r.label)}${tagFor(r)}</td><td class="mono">${r.ids.join(" + ")}</td><td class="mono">${hhmm(r.fl[0].dep)}</td><td class="mono">${hhmm(r.arrOk)}</td>
+    <td class="mono"><span class="pbar"><span style="width:${r.pOk * 100}%"></span></span>${pct(r.pOk)}</td>
+    <td class="r mono">${(r.expDel / 60).toFixed(1)} h</td><td class="r mono">${usd(r.travCash)}</td><td class="r mono">${usd(r.airCash)}</td>
+    <td><div class="stack" style="width:${Math.max(8, r.total / maxT * 160)}px" title="${r.breakdown.map(([k, v]) => `${k}: ${usd(v)}`).join("\n")}">${r.breakdown.map(([, v], j) => v > 0.5 ? `<span style="flex:${v};background:${COMP_COLORS[j]}"></span>` : "").join("")}</div></td>
+    <td class="r mono"><b>${usd(r.total)}</b></td></tr>`).join("")}</tbody>`;
+  $("opts").querySelectorAll("tbody tr").forEach(tr => tr.onclick = () => { state.selected = tr.dataset.k; renderMap(); renderBoard(); renderOptions(); });
+}
+function renderAll() { compute(); renderSituation(); renderMap(); renderBoard(); renderOptions(); if (state.tab === "sens") renderSens(); if (state.tab === "search") renderSearch(false); syncControls(); }
+
+/* ============================================================ sensitivity */
+function renderSens() {
+  const mode = $("sens-var").value;
+  const xs = [], rows = [];
+  const lo = 0, hi = mode === "vot" ? 500 : 300, step = mode === "vot" ? 5 : 5;
+  for (let x = lo; x <= hi; x += step) {
+    const st = { ...state, ...(mode === "vot" ? { vot: x } : { delay: x }) };
+    const s = makeScenario(st);
+    const r = rankAll(s, profOf(st), st.persp, asmOf(st));
+    xs.push(x); rows.push(r);
+  }
+  const winners = rows.map(r => r[0] ? r[0].ids.join() : "");
+  const keys = [...new Set(winners.filter(Boolean))];
+  const cur = mode === "vot" ? state.vot : state.delay;
+  const curIdx = Math.round((cur - lo) / step);
+  RANKED.slice(0, 1).forEach(r => { if (!keys.includes(r.ids.join())) keys.push(r.ids.join()); });
+  const lines = keys.slice(0, 5);
+  const W = 900, H = 360, L = 64, R = 190, T = 44, B = 44;
+  const val = (r, k) => { const x = r.find(q => q.ids.join() === k); return x ? x.total : null; };
+  let ymax = 0; rows.forEach(r => lines.forEach(k => { const v = val(r, k); if (v != null) ymax = Math.max(ymax, v); }));
+  const tick = [50, 100, 250, 500, 1000, 2000].find(t => ymax / t <= 5) || 5000;
+  const nt = Math.max(1, Math.ceil(ymax / tick)); ymax = nt * tick;
+  const X = x => L + (x - lo) / (hi - lo) * (W - L - R), Y = v => T + (1 - v / ymax) * (H - T - B);
+  let g = "";
+  for (let t = 0; t <= nt; t++) { const v = tick * t; g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--edge-soft)"/><text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end" fill="var(--dim)" font-size="11">${usd(v)}</text>`; }
+  for (let t = 0; t <= 5; t++) { const x = lo + (hi - lo) * t / 5; g += `<text x="${X(x)}" y="${H - B + 18}" text-anchor="middle" fill="var(--dim)" font-size="11">${mode === "vot" ? "$" + x + "/h" : x + " min"}</text>`; }
+  g += `<text x="${(L + W - R) / 2}" y="${H - 6}" text-anchor="middle" fill="var(--muted)" font-size="12">${mode === "vot" ? "Traveller's value of time" : "Inbound delay into Zürich"}</text>`;
+  const colorOf = k => COMP_COLORS[lines.indexOf(k) % 5];
+  // winner band
+  let start = 0;
+  for (let i = 1; i <= winners.length; i++) if (i === winners.length || winners[i] !== winners[start]) {
+    const k = winners[start];
+    if (k) { const x1 = X(xs[start]) , x2 = X(xs[Math.min(i, xs.length - 1)]); g += `<rect x="${x1}" y="10" width="${Math.max(2, x2 - x1)}" height="16" fill="${lines.includes(k) ? colorOf(k) : "var(--base)"}" rx="2"/>`; }
+    start = i;
+  }
+  g += `<text x="${W - R + 8}" y="22" fill="var(--muted)" font-size="11">winner across range</text>`;
+  lines.forEach(k => {
+    let d = "", pen = false;
+    rows.forEach((r, i) => { const v = val(r, k); if (v == null) { pen = false; return; } d += `${pen ? "L" : "M"}${X(xs[i]).toFixed(1)},${Y(v).toFixed(1)}`; pen = true; });
+    g += `<path d="${d}" fill="none" stroke="${colorOf(k)}" stroke-width="2.5"/>`;
+  });
+  // direct labels at right, de-overlapped
+  const lab = lines.map(k => { let v = null; for (let i = rows.length - 1; i >= 0 && v == null; i--) v = val(rows[i], k); const r = rows.flat().find(q => q.ids.join() === k); return { k, y: v == null ? T : Y(v), text: r ? `${r.label.replace(/ → /g, "–")} · ${r.ids.join("+")}` : k }; }).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < lab.length; i++) if (lab[i].y - lab[i - 1].y < 15) lab[i].y = lab[i - 1].y + 15;
+  lab.forEach(o => g += `<circle cx="${W - R + 10}" cy="${o.y}" r="4" fill="${colorOf(o.k)}"/><text x="${W - R + 18}" y="${o.y + 4}" fill="var(--text)" font-size="11">${esc(o.text)}</text>`);
+  if (cur >= lo && cur <= hi) {
+    g += `<line x1="${X(cur)}" x2="${X(cur)}" y1="${T - 8}" y2="${H - B}" stroke="var(--text)" stroke-dasharray="4 4"/><text x="${X(cur) + 6}" y="${T - 2}" fill="var(--text)" font-size="12" font-weight="600">now</text>`;
+  }
+  $("sens-chart").innerHTML = g;
+  const flips = []; for (let i = 1; i < winners.length; i++) if (winners[i] !== winners[i - 1] && winners[i]) flips.push(xs[i]);
+  const w = rows[Math.min(Math.max(curIdx, 0), rows.length - 1)][0];
+  $("sens-head").innerHTML = flips.length
+    ? `The recommendation flips <em>${flips.length} time${flips.length > 1 ? "s" : ""}</em> across this range, at ${flips.map(x => mode === "vot" ? "$" + x + "/h" : x + " min").join(", ")}. ${w ? "Right now it is <em>" + esc(w.label) + "</em>." : ""}`
+    : `The recommendation is <em>robust</em> across the whole range: ${w ? esc(w.label) + " (" + w.ids.join(" + ") + ")" : "no feasible route"}.`;
+}
+
+/* ============================================================ search */
+let searchTimer = null;
+function renderSearch(animate) {
+  const vm = state.vot / 60;
+  const dj = search(S, vm, 200, false), as = search(S, vm, 200, true);
+  const fill = (res, list, n, route) => {
+    $(n).textContent = res.expanded;
+    $(route).textContent = res.path ? "→ " + res.path.map(f => f.id).join(" + ") + `  (cost ${res.g.toFixed(0)})` : "no route";
+    $(list).innerHTML = res.order.map((o, i) => `<li class="${animate ? "" : "on"} ${i === res.order.length - 1 && res.path ? "goal" : ""}"><span>${i + 1}</span><span>${o.key === "START" ? "start @ " + S.at : o.key + " → " + o.at}</span><span>f=${o.f.toFixed(0)}</span></li>`).join("");
+  };
+  fill(dj, "dj-list", "dj-n", "dj-route"); fill(as, "as-list", "as-n", "as-route");
+  const same = dj.path && as.path && dj.path.map(f => f.id).join() === as.path.map(f => f.id).join();
+  $("search-note").textContent = `Same route: ${same ? "yes" : "no"} · A* expanded ${as.expanded} of Dijkstra's ${dj.expanded} nodes · value of time ${usd(state.vot)}/h, λ = 200.`;
+  if (animate) {
+    clearInterval(searchTimer);
+    const items = [...$("dj-list").children, ...$("as-list").children];
+    const djItems = [...$("dj-list").children], asItems = [...$("as-list").children];
+    let i = 0; searchTimer = setInterval(() => { if (djItems[i]) djItems[i].classList.add("on"); if (asItems[i]) asItems[i].classList.add("on"); i++; if (i > items.length) clearInterval(searchTimer); }, 380);
+  }
+}
+
+/* ============================================================ simulation lab */
+let labRun = null;
+function runLab() {
+  if (labRun) { labRun.cancel = true; }
+  const mode = $("lab-mode").value, n = +$("lab-n").value, worse = +$("lab-stress").value / 100, seed = +$("lab-seed").value || 1;
+  const rng = mulberry32(seed), prof = profOf(state), asm = asmOf(state), persp = state.persp;
+  const names = ["ReRouteAI", "Earliest arrival", "Lowest fare", "Next direct, same airline"];
+  const acc = Object.fromEntries(names.map(k => [k, { cost: [], delay: 0, w3: 0, fail: 0, same: [] }]));
+  const job = { cancel: false }; labRun = job;
+  let done = 0, skipped = 0;
+  const cache = new Map();
+  const step = () => {
+    if (job.cancel) return;
+    const end = Math.min(n, done + 60);
+    for (; done < end; done++) {
+      const st = mode === "this" ? state : { ...state, delay: 60 + Math.floor(rng() * 181), month: 1 + Math.floor(rng() * 12), dow: 1 + Math.floor(rng() * 7), bag: rng() < 0.7 };
+      const key = [st.delay, st.month, st.dow, st.bag].join();
+      let pack = cache.get(key);
+      if (!pack) { const s = makeScenario(st); const r = rankAll(s, prof, persp, asm); const b = baselines(r, s); pack = { s, r, b }; cache.set(key, pack); }
+      if (!pack.r.length) { skipped++; for (const k of names) acc[k].cost.push(NaN); continue; }
+      const strat = { "ReRouteAI": pack.r[0], "Earliest arrival": pack.b.earliest, "Lowest fare": pack.b.cheapest, "Next direct, same airline": pack.b.same || pack.r[pack.r.length - 1] };
+      for (const k of names) { const o = realise(pack.s, strat[k], prof, persp, asm, rng, worse); const a = acc[k]; a.cost.push(o.cost); a.delay += o.delay; a.w3 += o.within3; a.fail += o.failed; a.same.push(strat[k] === strat["ReRouteAI"]); }
+    }
+    $("lab-prog").style.width = (done / n * 100) + "%";
+    drawLab(acc, names, done - skipped, worse, mode, n, seed, persp);
+    if (done < n) requestAnimationFrame(step); else labRun = null;
+  };
+  requestAnimationFrame(step);
+}
+function stats(arr) { const v = arr.filter(x => !Number.isNaN(x)); const m = v.reduce((a, b) => a + b, 0) / Math.max(v.length, 1); const sd = Math.sqrt(v.reduce((a, b) => a + (b - m) ** 2, 0) / Math.max(v.length - 1, 1)); return { m, ci: 1.96 * sd / Math.sqrt(Math.max(v.length, 1)) }; }
+function drawLab(acc, names, n, worse, mode, total, seed, persp) {
+  if (n <= 0) return;
+  const st = Object.fromEntries(names.map(k => [k, stats(acc[k].cost)]));
+  const paired = k => { const a = acc["ReRouteAI"].cost, b = acc[k].cost, sm = acc[k].same; const d = []; let same = 0; for (let i = 0; i < a.length; i++) if (!Number.isNaN(a[i])) { d.push(b[i] - a[i]); same += sm[i] ? 1 : 0; } return { ...stats(d), same: same / Math.max(d.length, 1) }; };
+  const verdict = k => { const r = paired(k), lo = r.m - r.ci, hi = r.m + r.ci;
+    if (lo > 0) return `<em>${usd(r.m)}</em> cheaper than "${k.toLowerCase()}" (95% CI ${usd(lo)}–${usd(hi)})`;
+    if (hi < 0) return `<b style="color:var(--warn)">${usd(-r.m)} dearer</b> than "${k.toLowerCase()}" (95% CI ${usd(-hi)}–${usd(-lo)})`;
+    return `no significant difference from "${k.toLowerCase()}" (${r.m >= 0 ? "" : "−"}${usd(Math.abs(r.m))} ± ${usd(r.ci)})`; };
+  $("lab-head").innerHTML = `Per disruption, ReRouteAI was ${verdict("Next direct, same airline")}, ${verdict("Earliest arrival")}, and ${verdict("Lowest fare")}.`;
+  const W = 520, H = 250, L = 170, R = 70, T = 14, rowH = 52;
+  const xmax = Math.max(...names.map(k => st[k].m + st[k].ci)) * 1.08 || 1;
+  const X = v => L + v / xmax * (W - L - R);
+  let g = "";
+  names.forEach((k, i) => {
+    const y = T + i * rowH, m = st[k].m, ci = st[k].ci, col = k === "ReRouteAI" ? "var(--accent)" : "var(--base)";
+    g += `<text x="${L - 10}" y="${y + 20}" text-anchor="end" fill="var(--text)" font-size="13" font-weight="${k === "ReRouteAI" ? 700 : 400}">${k}</text>
+      <rect x="${L}" y="${y + 6}" width="${Math.max(2, X(m) - L)}" height="24" rx="4" fill="${col}"/>
+      <line x1="${X(m - ci)}" x2="${X(m + ci)}" y1="${y + 18}" y2="${y + 18}" stroke="var(--text)" stroke-width="1.5"/>
+      <line x1="${X(m - ci)}" x2="${X(m - ci)}" y1="${y + 12}" y2="${y + 24}" stroke="var(--text)" stroke-width="1.5"/>
+      <line x1="${X(m + ci)}" x2="${X(m + ci)}" y1="${y + 12}" y2="${y + 24}" stroke="var(--text)" stroke-width="1.5"/>
+      <text x="${X(m + ci) + 8}" y="${y + 23}" fill="var(--text)" font-size="13" font-family="IBM Plex Mono, monospace">${usd(m)}</text>`;
+  });
+  g += `<text x="${L}" y="${H - 6}" fill="var(--dim)" font-size="11">Average realised ${persp} cost per disruption, with 95% confidence interval</text>`;
+  $("lab-chart").innerHTML = g;
+  $("lab-table").innerHTML = `<thead><tr><th>Strategy</th><th class="r">Avg cost</th><th class="r">Avg delay</th><th class="r">Within 3 h</th><th class="r">Plan failed</th><th class="r">Same pick as ReRouteAI</th></tr></thead><tbody>${names.map(k => {
+    const a = acc[k], m = a.cost.filter(x => !Number.isNaN(x)).length || 1, pr = k === "ReRouteAI" ? null : paired(k);
+    return `<tr><td style="white-space:nowrap">${k}</td><td class="r mono">${usd(st[k].m)}</td><td class="r mono">${(a.delay / m / 60).toFixed(2)} h</td><td class="r mono">${pct(a.w3 / m)}</td><td class="r mono">${pct(a.fail / m)}</td><td class="r mono">${pr ? pct(pr.same) : "—"}</td></tr>`; }).join("")}</tbody>`;
+  $("lab-foot").textContent = `${n.toLocaleString()} of ${total.toLocaleString()} disruptions replayed · ${mode === "this" ? "this disruption" : "random inbound delays 60–240 min, any month and weekday, 70% with checked bags"} · decision-maker: current settings (${persp}${persp === "traveller" ? ", $" + state.vot + "/h" : ""}) · each flight's delay drawn from the model's distribution${worse ? `, shifted ${Math.round(worse * 100)}% toward longer delays` : ""} · seed ${seed}. A failed plan falls back to the next protected options (expected arrival).`;
+}
+
+/* ============================================================ method tab */
+function renderMethod() {
+  const mc = DATA.modelCard;
+  const boxes = [
+    ["Where the risk numbers come from", `<p>Every probability is exported from the trained Python delay model (gradient boosting, 10 delay bands + cancelled), for each flight, month and weekday. Data: <b>${esc(DATA.source)}</b>.${mc ? ` Held-out PR-AUC ${mc.prAuc["gradient boosting"].toFixed(3)} vs. ${mc.prAuc["hour-of-day lookup"].toFixed(3)} for an hour-of-day lookup; ${mc.testRows.toLocaleString()} test flights.` : ""}</p>`],
+    ["Engine parity", `<p>This page re-implements the ranking, fallback cascade and Dijkstra/A* search in JavaScript. On load it recomputes ${DATA.parity.length} scenarios the Python engine solved and compares routes, costs, probabilities and search counts. Status: <b id="parity-inline"></b>.</p>`],
+    ["Decision rule", `<p>Expected cost = cash + value of time × expected delay + Σ P(fail at leg) × fallback + stop penalty; the airline view adds expected EU261 (${"€"}0 / ${"€"}300 / ${"€"}600 at 3 h and 4 h for this ${Math.round(DISR.journeyKm).toLocaleString()} km journey) and meals/hotel.</p>`],
+    ["Hard constraints", `<ul><li>Minimum connection time per airport, +10 min with a checked bag</li><li>Full flights excluded (seat inventory)</li><li>Up to 3 legs; no return to Zürich</li></ul>`],
+    ["Cost assumptions", `<ul><li>Hotel ${usd(state.hotel)} / night; meals ${usd(ASM0.meals)} if &gt;2 h late</li><li>Interline seat = ${Math.round(ASM0.interlineShare * 100)}% of walk-up fare</li><li>Airline goodwill ${usd(ASM0.goodwill)} per hour late</li><li>€1 = $${DATA.eurToUsd}</li></ul>`],
+    ["What this does not claim", `<ul><li>Timetable, fares and seats are illustrative; AlpenJet is fictional</li><li>A U.S.-trained model applied to European airports (stated domain shift)</li><li>Connection risk ignores correlation between inbound and onward delays</li><li>Legal summary of EU261 is simplified</li></ul>`],
+  ];
+  $("method-boxes").innerHTML = boxes.map(([h, b]) => `<div class="box"><h3>${h}</h3>${b}</div>`).join("");
+  $("tt").innerHTML = `<thead><tr><th>Flight</th><th>Airline</th><th>From</th><th>To</th><th>Dep</th><th>Arr</th><th class="r">Seats left</th><th class="r">Walk-up fare</th><th>Ticket</th></tr></thead><tbody>${FLIGHTS.map(f => `<tr><td class="mono">${f.id}</td><td>${esc(f.carrierName)}</td><td class="mono">${f.origin}</td><td class="mono">${f.dest}</td><td class="mono">${hhmm(f.dep)}</td><td class="mono">${hhmm(f.arr)}</td><td class="r mono" style="color:${f.seats === 0 ? "var(--bad)" : "inherit"}">${f.seats}</td><td class="r mono">${usd(f.fare)}</td><td>${f.protected ? "protected" : "separate"}</td></tr>`).join("")}</tbody>`;
+  updateParityInline();
+}
+
+/* ============================================================ parity self-test */
+let PARITY = null;
+function runParity() {
+  const rows = []; let ok = 0;
+  for (const c of DATA.parity) {
+    const i = c.input;
+    const st = { delay: i.delay, month: i.month, dow: i.dow, bag: i.bag };
+    const s = makeScenario(st);
+    const asm = { ...ASM0, eu261: i.eu261, hotel: i.hotel };
+    const r = rankAll(s, { vot: i.vot, stop: i.stop }, i.perspective, asm);
+    const probs = [];
+    if (r.length !== c.n) probs.push(`routes ${r.length} vs ${c.n}`);
+    c.top.forEach((t, k) => {
+      const m = r[k];
+      if (!m) { probs.push(`missing #${k + 1}`); return; }
+      if (m.ids.join() !== t.flights.join()) probs.push(`#${k + 1} ${m.ids.join("+")} vs ${t.flights.join("+")}`);
+      if (Math.abs(m.total - t.total) > 0.05) probs.push(`#${k + 1} cost ${m.total.toFixed(2)} vs ${t.total.toFixed(2)}`);
+      if (Math.abs(m.pOk - t.p) > 1e-4) probs.push(`#${k + 1} p ${m.pOk.toFixed(4)} vs ${t.p.toFixed(4)}`);
+    });
+    const dj = search(s, i.vot / 60, 200, false), as = search(s, i.vot / 60, 200, true);
+    if ((dj.path || []).map(f => f.id).join() !== c.dijkstra.flights.join() || dj.expanded !== c.dijkstra.expanded) probs.push(`Dijkstra ${dj.expanded} vs ${c.dijkstra.expanded}`);
+    if ((as.path || []).map(f => f.id).join() !== c.astar.flights.join() || as.expanded !== c.astar.expanded) probs.push(`A* ${as.expanded} vs ${c.astar.expanded}`);
+    if (!probs.length) ok++;
+    rows.push({ c, probs, best: r[0] });
+  }
+  PARITY = { ok, n: DATA.parity.length, rows };
+  const b = $("parity");
+  b.textContent = ok === PARITY.n ? `✓ Matches Python engine · ${ok}/${PARITY.n} cases` : `⚠ Parity ${ok}/${PARITY.n} cases`;
+  b.className = "pill " + (ok === PARITY.n ? "ok" : "warnp");
+  updateParityInline();
+}
+function updateParityInline() { const el = document.getElementById("parity-inline"); if (el && PARITY) el.textContent = `${PARITY.ok} of ${PARITY.n} cases match`; }
+function openParity() {
+  if (!PARITY) return;
+  $("parity-text").innerHTML = `Each case is a random scenario (delay, month, weekday, bag, value of time, perspective, EU261, hotel) solved by the Python engine when this file was built. The page solves it again and compares the number of feasible routes, the top 5 routes in order, their expected costs (±$0.05) and success probabilities (±0.0001), and the routes and node counts of Dijkstra and A*. <b>${PARITY.ok} of ${PARITY.n}</b> match exactly.`;
+  $("parity-tbl").innerHTML = `<thead><tr><th>#</th><th>Delay</th><th>Month/day</th><th>View</th><th class="r">VOT</th><th>EU261</th><th>Best route</th><th>Result</th></tr></thead><tbody>${PARITY.rows.map((r, k) => `<tr><td class="num">${k + 1}</td><td class="mono">${r.c.input.delay}m</td><td class="mono">${r.c.input.month}/${r.c.input.dow}</td><td>${r.c.input.perspective}</td><td class="r mono">$${r.c.input.vot}</td><td>${r.c.input.eu261 ? "yes" : "no"}</td><td class="mono">${r.best ? r.best.ids.join("+") : "none"}</td><td style="color:${r.probs.length ? "var(--warn)" : "var(--good)"}">${r.probs.length ? esc(r.probs.join("; ")) : "match"}</td></tr>`).join("")}</tbody>`;
+  $("parity-dlg").showModal();
+}
+
+/* ============================================================ controls, tabs, scenes */
+function syncControls() {
+  $("delay").value = state.delay; $("delay-o").textContent = state.delay + " min";
+  $("month").value = state.month; $("dow").value = state.dow; $("bag").checked = state.bag;
+  $("p-trav").setAttribute("aria-pressed", state.persp === "traveller"); $("p-air").setAttribute("aria-pressed", state.persp === "airline");
+  $("profile").value = state.profile; $("vot").value = state.vot; $("vot-o").textContent = "$" + state.vot + "/h";
+  $("eu").checked = state.eu261; $("hotel").value = state.hotel; $("hotel-o").textContent = usd(state.hotel);
+}
+function setTab(t) {
+  state.tab = t;
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
+  ["options", "lab", "sens", "search", "method"].forEach(k => $("panel-" + k).hidden = k !== t);
+  if (t === "sens") renderSens();
+  if (t === "search") renderSearch(false);
+  if (t === "method") renderMethod();
+}
+const SCENES = [
+  { t: "95 minutes late into Zürich", p: b => `LX53 from Boston lands at 09:00. With passport control and a checked bag the traveller can board again at 09:50, and the 08:25 Warsaw connection is gone. ReRouteAI checks ${RANKED.length} feasible reroutes; for a leisure traveller the best is ${b.label} (${b.ids.join(" + ")}), which works ${pct(b.pOk)} of the time.`, set: { delay: 95, persp: "traveller", profile: "Leisure traveller", vot: 35, eu261: true, month: 7, dow: 5, bag: true }, tab: "options" },
+  { t: "A student pays with time, not money", p: b => `Cost matters most, so each hour of delay is worth only $12. The engine picks ${b.label} (${b.ids.join(" + ")}): the traveller pays ${usd(b.travCash)}, and it works ${pct(b.pOk)} of the time.`, set: { profile: "Student (cost first)", vot: 12 }, tab: "options" },
+  { t: "A business traveller buys certainty", p: b => `At $150 per hour of delay the engine picks ${b.label} (${b.ids.join(" + ")}), landing ${hhmm(b.arrOk)} if it works (${pct(b.pOk)} likely); the traveller pays ${usd(b.travCash)}. Same flights as before, different objective.`, set: { profile: "Business traveller", vot: 150 }, tab: "options" },
+  { t: "The airline's view: EU261 is a step", p: b => `For this journey, arriving 3 h late costs the airline €300 per passenger and 4 h costs €600. The airline's cheapest plan is ${b.label} (${b.ids.join(" + ")}) at ${usd(b.total)} expected cost, of which ${usd(b.expEu)} is expected compensation.`, set: { persp: "airline", eu261: true }, tab: "options" },
+  { t: "Weather delay: no compensation owed", p: b => `Extraordinary circumstances remove the compensation step, so the airline's cheapest plan becomes ${b.label} (${b.ids.join(" + ")}), landing ${hhmm(b.arrOk)} at ${usd(b.total)} expected cost.`, set: { persp: "airline", eu261: false }, tab: "options" },
+  { t: "Where does the answer flip?", p: "Sweep the traveller's value of time. Each line is one route's expected cost; where lines cross, the recommendation changes. Class 4: different priorities lead to different optimal solutions.", set: { persp: "traveller", profile: "Leisure traveller", vot: 35, eu261: true }, tab: "sens" },
+  { t: "1,000 simulated disruptions", p: "Random delays, months and weekdays. Each strategy's plan is replayed with flight delays drawn from the model, and a failed connection falls back to the next protected flights. Compare realised cost, not promises.", set: {}, tab: "lab", lab: { stress: 0, run: true } },
+  { t: "Stress test: delays 50% worse than predicted", p: "What if the model is too optimistic? We shift every flight's delay distribution toward longer delays and replay the same disruptions.", set: {}, tab: "lab", lab: { stress: 50, run: true } },
+  { t: "Why the search is exact and fast", p: "Dijkstra and A* on the time-expanded flight graph. Using −ln P makes risks additive, so the search stays exact; A* reaches the same route while expanding fewer nodes.", set: {}, tab: "search", replay: true },
+  { t: "What we assume, and how to check it", p: "Every risk number comes from the trained Python model, and this page proves on load that it reproduces the Python engine's answers. Assumptions and limits are listed so the class can challenge them.", set: {}, tab: "method" },
+];
+let scene = 0;
+function goScene(i) {
+  scene = (i + SCENES.length) % SCENES.length;
+  const sc = SCENES[scene];
+  Object.assign(state, sc.set); state.selected = null;
+  renderAll(); setTab(sc.tab);
+  $("cap-n").textContent = scene + 1; $("cap-t").textContent = sc.t;
+  $("cap-p").textContent = typeof sc.p === "function" ? (RANKED[0] ? sc.p(RANKED[0]) : "No feasible route for this scenario.") : sc.p;
+  $("scount").textContent = `${scene + 1} / ${SCENES.length}`;
+  if (sc.lab) { $("lab-stress").value = sc.lab.stress; $("lab-stress-o").textContent = sc.lab.stress + "%"; $("lab-mode").value = "random"; if (sc.lab.run) runLab(); }
+  if (sc.replay) renderSearch(true);
+}
+function bind() {
+  $("month").innerHTML = MONTHS.map((m, i) => `<option value="${i + 1}">${m}</option>`).join("");
+  $("dow").innerHTML = DAYS.map((d, i) => `<option value="${i + 1}">${d}</option>`).join("");
+  $("profile").innerHTML = PROF_NAMES.map(p => `<option>${esc(p)}</option>`).join("");
+  const on = (id, ev, fn) => $(id).addEventListener(ev, fn);
+  on("delay", "input", e => { state.delay = +e.target.value; state.selected = null; renderAll(); });
+  on("month", "change", e => { state.month = +e.target.value; renderAll(); });
+  on("dow", "change", e => { state.dow = +e.target.value; renderAll(); });
+  on("bag", "change", e => { state.bag = e.target.checked; renderAll(); });
+  on("p-trav", "click", () => { state.persp = "traveller"; state.selected = null; renderAll(); });
+  on("p-air", "click", () => { state.persp = "airline"; state.selected = null; renderAll(); });
+  on("profile", "change", e => { state.profile = e.target.value; state.vot = DATA.profiles[state.profile].vot; state.selected = null; renderAll(); });
+  on("vot", "input", e => { state.vot = +e.target.value; state.selected = null; renderAll(); });
+  on("eu", "change", e => { state.eu261 = e.target.checked; state.selected = null; renderAll(); });
+  on("hotel", "input", e => { state.hotel = +e.target.value; renderAll(); if (state.tab === "method") renderMethod(); });
+  on("lab-run", "click", runLab);
+  on("lab-stress", "input", e => $("lab-stress-o").textContent = e.target.value + "%");
+  on("sens-var", "change", renderSens);
+  on("search-replay", "click", () => renderSearch(true));
+  on("prev", "click", () => goScene(scene - 1));
+  on("next", "click", () => goScene(scene + 1));
+  on("present", "click", togglePresent);
+  on("parity", "click", openParity);
+  on("parity-close", "click", () => $("parity-dlg").close());
+  document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
+  document.addEventListener("keydown", e => {
+    if (e.target.matches("input[type=number], input[type=text], select") || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "ArrowRight") { e.preventDefault(); goScene(scene + 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); goScene(scene - 1); }
+    else if (e.key === "p" || e.key === "P") togglePresent();
+    else if (e.key === "r" || e.key === "R") { setTab("lab"); runLab(); }
+    else if ("12345".includes(e.key)) setTab(["options", "lab", "sens", "search", "method"][+e.key - 1]);
+  });
+}
+function togglePresent() { const on = document.body.classList.toggle("present"); $("present").setAttribute("aria-pressed", on); }
+
+$("datasrc").textContent = /synthetic/i.test(DATA.source) ? "Delay data: synthetic (BTS format)" : "Delay data: U.S. BTS";
+$("datasrc").className = "pill " + (/synthetic/i.test(DATA.source) ? "warnp" : "ok");
+bind();
+$("lab-stress-o").textContent = "0%";
+goScene(0);
+setTimeout(runParity, 30);
+</script>
